@@ -1,6 +1,8 @@
 # -*- coding:utf-8 -*-
 import time
 import subprocess
+import fcntl
+import os
 from threading import Timer
 
 
@@ -53,3 +55,20 @@ def command_timeout(cmd, timeout=10):
     finally:
         my_timer.cancel()
     return p, stdout, stderr
+
+
+def command_poll(cmd, deal, deal_error):
+    p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=False)
+    fl = fcntl.fcntl(p.stdout.fileno(), fcntl.F_GETFL)
+    fcntl.fcntl(p.stdout.fileno(), fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+    while True:
+        if p.poll() is not None:
+            if p.returncode:
+                deal_error()
+            break
+        try:
+            out = os.read(p.stderr.fileno(), 1024)
+            deal(out)
+        except Exception, e:
+            continue
