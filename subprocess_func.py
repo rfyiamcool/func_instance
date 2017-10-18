@@ -68,7 +68,7 @@ def command_poll(cmd, deal, deal_error):
                 deal_error()
             break
         try:
-            out = os.read(p.stderr.fileno(), 1024)
+            out = os.read(p.stdout.fileno(), 1024)
             deal(out)
         except Exception, e:
             continue
